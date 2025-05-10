@@ -1,9 +1,9 @@
-from textnode import TextNode
+from textnode import TextNode, TextType
+
 
 def main():
-    text_node = TextNode("this is some anchor text", "link", "https://www.boot.dev")
-    print(text_node)
+    node = TextNode("This is a text node", TextType.BOLD, "https://www.boot.dev")
+    print(node)
 
 
-if __name__ == "__main__":
-    main()
+main()
