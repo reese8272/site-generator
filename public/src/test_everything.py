@@ -2,6 +2,7 @@ import unittest
 from htmlnode import HTMLNode, ParentNode, LeafNode
 from textnode import TextNode, TextType
 from text_to_html import text_node_to_html_node
+from split_nodes import split_nodes_delimiter
 
 
 class TestHTMLNode(unittest.TestCase):
@@ -151,6 +152,42 @@ class TestTextToHTML(unittest.TestCase):
         self.assertEqual(html_node.value, "")
         self.assertEqual(html_node.props['src'], "123.png")
         self.assertEqual(html_node.props['alt'], "This is an image")
+
+
+class TestDelimiterSplit(unittest.TestCase):
+    def test_split_nodes_delimiter_basic(self):
+        node = TextNode("This is text with a `code block` word", TextType.TEXT)
+        new_nodes = split_nodes_delimiter([node], "`", TextType.CODE)
+        assert len(new_nodes) == 3
+        assert new_nodes[0].text == "This is text with a "
+        assert new_nodes[0].text_type == TextType.TEXT
+        assert new_nodes[1].text == "code block"
+        assert new_nodes[1].text_type == TextType.CODE
+        assert new_nodes[2].text == " word"
+        assert new_nodes[2].text_type == TextType.TEXT
+    
+    def test_split_nodes_delimiter_multiple(self):
+        node = TextNode("This `code` has `multiple` code blocks", TextType.TEXT)
+        new_nodes = split_nodes_delimiter([node], "`", TextType.CODE)
+        assert len(new_nodes) == 5
+        assert new_nodes[0].text == "This "
+        assert new_nodes[1].text == "code"
+        assert new_nodes[1].text_type == TextType.CODE
+        assert new_nodes[2].text == " has "
+        assert new_nodes[3].text == "multiple"
+        assert new_nodes[3].text_type == TextType.CODE
+        assert new_nodes[4].text == " code blocks"
+    
+    def test_split_nodes_delimiter_edge_positions(self):
+        node = TextNode("`code` at beginning and end `code`", TextType.TEXT)
+        new_nodes = split_nodes_delimiter([node], "`", TextType.CODE)
+        assert len(new_nodes) == 3
+        assert new_nodes[0].text == "code"
+        assert new_nodes[0].text_type == TextType.CODE
+        assert new_nodes[1].text == " at beginning and end "
+        assert new_nodes[1].text_type == TextType.TEXT
+        assert new_nodes[2].text == "code"
+        assert new_nodes[2].text_type == TextType.CODE
 
 
 
