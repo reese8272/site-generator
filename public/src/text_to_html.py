@@ -2,6 +2,10 @@ from textnode import TextType
 from htmlnode import LeafNode
 
 def text_node_to_html_node(text_node):
+    '''
+    This method essentially creates our Leaf Nodes based off the text_type given from the
+        text node file and the TextNode class
+    '''
     match text_node.text_type:
         case TextType.TEXT:
             return LeafNode(tag = None, value = text_node.text)
