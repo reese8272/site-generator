@@ -3,6 +3,7 @@ from htmlnode import HTMLNode, ParentNode, LeafNode
 from textnode import TextNode, TextType
 from text_to_html import text_node_to_html_node
 from split_nodes import split_nodes_delimiter
+from regex import extract_markdown_images, extract_markdown_links
 
 
 class TestHTMLNode(unittest.TestCase):
@@ -189,6 +190,51 @@ class TestDelimiterSplit(unittest.TestCase):
         assert new_nodes[2].text == "code"
         assert new_nodes[2].text_type == TextType.CODE
 
+
+class TestRegex(unittest.TestCase):
+    def test_extract_markdown_images(self):
+        matches = extract_markdown_images(
+            "This is text with an ![image](https://i.imgur.com/zjjcJKZ.png)"
+        )
+        self.assertListEqual([("image", "https://i.imgur.com/zjjcJKZ.png")], matches)
+
+    def test_extract_images_string_valid(self):
+        matches = extract_markdown_images("Here's an ![logo](https://example.com/logo.png)")
+        self.assertListEqual([("logo", "https://example.com/logo.png")], matches)
+
+    def test_extract_images_list_valid(self):
+        matches = extract_markdown_images([
+            "Header image: ![header](https://img.com/header.jpg)",
+            "Icon: ![icon](https://img.com/icon.png)"
+        ])
+        self.assertListEqual([
+            ("header", "https://img.com/header.jpg"),
+            ("icon", "https://img.com/icon.png")
+        ], matches)
+
+    def test_extract_images_invalid_input(self):
+        with self.assertRaises(Exception) as context:
+            extract_markdown_images(12345)
+        self.assertIn("Error, invalid type passed", str(context.exception))
+
+
+    def test_extract_links_string_valid(self):
+        matches = extract_markdown_links("Click [here](https://boot.dev)")
+        self.assertListEqual([("here", "https://boot.dev")], matches)
+
+    def test_extract_links_list_valid(self):
+        matches = extract_markdown_links([
+            "Visit [site](https://example.com)",
+            "More info at [docs](https://example.com/docs)"
+        ])
+        self.assertListEqual([
+            ("site", "https://example.com"),
+            ("docs", "https://example.com/docs")
+        ], matches)
+
+    def test_extract_links_malformed(self):
+        matches = extract_markdown_links("Broken link: [broken](missing-end")
+        self.assertListEqual([], matches)
 
 
 if __name__ == "__main__":
