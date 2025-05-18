@@ -1,4 +1,5 @@
 from textnode import TextNode, TextType
+from regex import extract_markdown_images, extract_markdown_links
 
 def split_nodes_delimiter(old_nodes, delimiter, text_type):
     result = []
@@ -34,6 +35,68 @@ def split_nodes_delimiter(old_nodes, delimiter, text_type):
         # add any remaining text
         if current_text:
             result.append(TextNode(current_text, TextType.TEXT))
+
+    return result
+
+
+def split_nodes_images(old_nodes):
+    result = []
+
+    for node in old_nodes:
+
+        if node.text_type != TextType.TEXT:
+            result.append(node)
+            continue
+
+        node_text = node.text
+        image_list = extract_markdown_images(node_text)
+        while len(image_list) > 0:
+            current_image = image_list[0]
+            true_link = f"![{current_image[0]}]({current_image[1]})"
+            before, after = node_text.split(true_link, 1)
+            
+            if before:
+                result.append(TextNode(before, TextType.TEXT))
+
+            result.append(TextNode(current_image[0], TextType.IMAGE, url = current_image[1]))
+
+            image_list.pop(0)
+            node_text = after
+
+        if node_text:
+            result.append(TextNode(node_text, TextType.TEXT))
+
+    return result
+
+
+
+
+def split_nodes_links(old_nodes):
+    result = []
+
+    for node in old_nodes:
+
+        if node.text_type != TextType.TEXT:
+            result.append(node)
+            continue
+
+        node_text = node.text
+        links_list = extract_markdown_links(node_text)
+        while len(links_list) > 0:
+            current_link = links_list[0]
+            true_link = f"[{current_link[0]}]({current_link[1]})"
+            before, after = node_text.split(true_link, 1)
+            
+            if before:
+                result.append(TextNode(before, TextType.TEXT))
+
+            result.append(TextNode(current_link[0], TextType.LINK, url = current_link[1]))
+
+            links_list.pop(0)
+            node_text = after
+
+        if node_text:
+            result.append(TextNode(node_text, TextType.TEXT))
 
     return result
 
