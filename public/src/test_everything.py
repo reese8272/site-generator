@@ -4,6 +4,7 @@ from textnode import TextNode, TextType
 from text_to_html import text_node_to_html_node
 from split_nodes import split_nodes_delimiter, split_nodes_images, split_nodes_links
 from regex import extract_markdown_images, extract_markdown_links
+from text_to_textnodes import text_to_textnodes
 
 
 class TestHTMLNode(unittest.TestCase):
@@ -325,6 +326,67 @@ class TestNodeSplitsImageLinks(unittest.TestCase):
         self.assertListEqual(new_nodes_image,[])
         self.assertListEqual(new_nodes_link,[])
 
+
+
+class TestTextToNode(unittest.TestCase):
+    def test_plain_text(self):
+        text = "Just plain text"
+        nodes = text_to_textnodes(text)
+        self.assertEqual(len(nodes), 1)
+        self.assertEqual(nodes[0].text, "Just plain text")
+        self.assertEqual(nodes[0].text_type, TextType.TEXT)
+
+    def test_bold_text(self):
+        text = "This is **bold** text"
+        nodes = text_to_textnodes(text)
+        self.assertEqual(len(nodes), 3)
+        self.assertEqual(nodes[0].text, "This is ")
+        self.assertEqual(nodes[0].text_type, TextType.TEXT)
+        self.assertEqual(nodes[1].text, "bold")
+        self.assertEqual(nodes[1].text_type, TextType.BOLD)
+        self.assertEqual(nodes[2].text, " text")
+        self.assertEqual(nodes[2].text_type, TextType.TEXT)
+
+    def test_italic_text(self):
+        text = "Some _italic_ word"
+        nodes = text_to_textnodes(text)
+        self.assertEqual(len(nodes), 3)
+        self.assertEqual(nodes[1].text_type, TextType.ITALIC)
+
+    def test_code_text(self):
+        text = "Here's `some code`"
+        nodes = text_to_textnodes(text)
+        self.assertEqual(len(nodes), 2)
+        self.assertEqual(nodes[1].text_type, TextType.CODE)
+
+    def test_link_text(self):
+        text = "Check out [this link](https://boot.dev)"
+        nodes = text_to_textnodes(text)
+        self.assertEqual(len(nodes), 2)
+        self.assertEqual(nodes[1].text_type, TextType.LINK)
+        self.assertEqual(nodes[1].url, "https://boot.dev")
+
+    def test_image_text(self):
+        text = "See this ![image](test.jpg)"
+        nodes = text_to_textnodes(text)
+        self.assertEqual(len(nodes), 2)
+        self.assertEqual(nodes[1].text_type, TextType.IMAGE)
+        self.assertEqual(nodes[1].url, "test.jpg")
+
+    def test_combined_text(self):
+        text = "**Bold** and _italic_ with `code`"
+        nodes = text_to_textnodes(text)
+        self.assertEqual(len(nodes), 5)
+        self.assertEqual(nodes[0].text, "Bold")
+        self.assertEqual(nodes[0].text_type, TextType.BOLD)
+        self.assertEqual(nodes[1].text, " and ")
+        self.assertEqual(nodes[1].text_type, TextType.TEXT)
+        self.assertEqual(nodes[2].text, "italic")
+        self.assertEqual(nodes[2].text_type, TextType.ITALIC)
+        self.assertEqual(nodes[3].text, " with ")
+        self.assertEqual(nodes[3].text_type, TextType.TEXT)
+        self.assertEqual(nodes[4].text, "code")
+        self.assertEqual(nodes[4].text_type, TextType.CODE)
 
 if __name__ == "__main__":
     unittest.main()
