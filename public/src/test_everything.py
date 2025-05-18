@@ -2,7 +2,7 @@ import unittest
 from htmlnode import HTMLNode, ParentNode, LeafNode
 from textnode import TextNode, TextType
 from text_to_html import text_node_to_html_node
-from split_nodes import split_nodes_delimiter
+from split_nodes import split_nodes_delimiter, split_nodes_images, split_nodes_links
 from regex import extract_markdown_images, extract_markdown_links
 
 
@@ -235,6 +235,95 @@ class TestRegex(unittest.TestCase):
     def test_extract_links_malformed(self):
         matches = extract_markdown_links("Broken link: [broken](missing-end")
         self.assertListEqual([], matches)
+
+
+class TestNodeSplitsImageLinks(unittest.TestCase):
+
+    def test_split_images(self):
+        node = TextNode(
+            "This is text with an ![image](https://i.imgur.com/zjjcJKZ.png) and another ![second image](https://i.imgur.com/3elNhQu.png)",
+            TextType.TEXT,
+        )
+        new_nodes = split_nodes_images([node])
+        self.assertListEqual(
+            [
+                TextNode("This is text with an ", TextType.TEXT),
+                TextNode("image", TextType.IMAGE, "https://i.imgur.com/zjjcJKZ.png"),
+                TextNode(" and another ", TextType.TEXT),
+                TextNode("second image", TextType.IMAGE, "https://i.imgur.com/3elNhQu.png"),
+            ],
+            new_nodes,
+        )
+
+    def test_single_image(self):
+        node = TextNode("![alt text](https://img.com/image.png)", TextType.TEXT)
+        new_nodes = split_nodes_images([node])
+        self.assertListEqual(
+            [TextNode("alt text", TextType.IMAGE, "https://img.com/image.png")],
+            new_nodes,
+        )
+
+    def test_multiple_links(self):
+        node = TextNode("Click [here](https://a.com) or [there](https://b.com)", TextType.TEXT)
+        new_nodes = split_nodes_links([node])
+        self.assertListEqual(
+            [
+                TextNode("Click ", TextType.TEXT),
+                TextNode("here", TextType.LINK, "https://a.com"),
+                TextNode(" or ", TextType.TEXT),
+                TextNode("there", TextType.LINK, "https://b.com"),
+            ],
+            new_nodes,
+        )
+
+    def test_plain_text(self):
+        node = TextNode("Just some plain text without any markdown.", TextType.TEXT)
+        new_nodes = split_nodes_links([node])
+        self.assertListEqual(
+            [TextNode("Just some plain text without any markdown.", TextType.TEXT)],
+            new_nodes,
+        )
+
+    def test_malformed_markdown(self):
+        node = TextNode("This is a broken ![image(link.com and [link]link.com)", TextType.TEXT)
+        new_nodes_image = split_nodes_images([node])
+        new_nodes_link = split_nodes_links([node])
+        self.assertListEqual(
+            [TextNode("This is a broken ![image(link.com and [link]link.com)", TextType.TEXT)],
+            new_nodes_image,
+        )
+        self.assertListEqual(
+            [TextNode("This is a broken ![image(link.com and [link]link.com)", TextType.TEXT)],
+            new_nodes_link,
+        )
+
+    def test_start_end_with_link(self):
+        node = TextNode("[start](https://start.com) and then some text and [end](https://end.com)", TextType.TEXT)
+        new_nodes = split_nodes_links([node])
+        self.assertListEqual(
+            [
+                TextNode("start", TextType.LINK, "https://start.com"),
+                TextNode(" and then some text and ", TextType.TEXT),
+                TextNode("end", TextType.LINK, "https://end.com"),
+            ],
+            new_nodes,
+        )
+
+    def test_already_split_nodes(self):
+        nodes = [
+            TextNode("before", TextType.TEXT),
+            TextNode("click me", TextType.LINK, "https://link.com"),
+            TextNode("after", TextType.TEXT),
+        ]
+        new_nodes = split_nodes_links(nodes)
+        self.assertListEqual(nodes, new_nodes)
+
+    def test_empty_string(self):
+        node = TextNode("", TextType.TEXT)
+        new_nodes_image = split_nodes_images([node])
+        new_nodes_link = split_nodes_links([node])
+        self.assertListEqual(new_nodes_image,[])
+        self.assertListEqual(new_nodes_link,[])
 
 
 if __name__ == "__main__":
