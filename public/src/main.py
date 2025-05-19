@@ -1,6 +1,6 @@
 from textnode import TextNode, TextType
 from htmlnode import ParentNode, HTMLNode, LeafNode
-from text_to_html import text_to_html_node
+from to_html import text_to_html_node
 
 def main():
     pass
