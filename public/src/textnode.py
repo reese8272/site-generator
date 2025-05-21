@@ -1,11 +1,8 @@
+from htmlnode import LeafNode
 from enum import Enum
 
 
 class TextType(Enum):
-    '''
-    and enum class that ensured we create a text type that
-        is compliant with html types
-    '''
     TEXT = "text"
     BOLD = "bold"
     ITALIC = "italic"
@@ -15,21 +12,12 @@ class TextType(Enum):
 
 
 class TextNode:
-    '''
-    The text node class that has the text, the type, and an optional URL.
-    This ensures that each text is treated uniformly.
-    We are simply caputuring the common attributes that our generator recognizes.
-    '''
     def __init__(self, text, text_type, url=None):
-        # text and text_type are required, or else it's not a *real* text node
         self.text = text
         self.text_type = text_type
         self.url = url
 
     def __eq__(self, other):
-        '''
-        ensured that we can do something like node1 == node2 with a true or false
-        '''
         return (
             self.text_type == other.text_type
             and self.text == other.text
@@ -37,9 +25,20 @@ class TextNode:
         )
 
     def __repr__(self):
-        '''
-        So that we can print node1 without returning it's object pointer.
-        Also, this is good for debugging purposes, and is better represented
-            than say __str__.
-        '''
         return f"TextNode({self.text}, {self.text_type.value}, {self.url})"
+
+
+def text_node_to_html_node(text_node):
+    if text_node.text_type == TextType.TEXT:
+        return LeafNode(None, text_node.text)
+    if text_node.text_type == TextType.BOLD:
+        return LeafNode("b", text_node.text)
+    if text_node.text_type == TextType.ITALIC:
+        return LeafNode("i", text_node.text)
+    if text_node.text_type == TextType.CODE:
+        return LeafNode("code", text_node.text)
+    if text_node.text_type == TextType.LINK:
+        return LeafNode("a", text_node.text, {"href": text_node.url})
+    if text_node.text_type == TextType.IMAGE:
+        return LeafNode("img", "", {"src": text_node.url, "alt": text_node.text})
+    raise ValueError(f"invalid text type: {text_node.text_type}")
